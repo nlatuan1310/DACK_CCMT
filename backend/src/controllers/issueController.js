@@ -48,3 +48,28 @@ export async function updateStatus(req, res, next) {
     next(err);
   }
 }
+
+/**
+ * GET /api/issues
+ * Lấy danh sách Issue (hỗ trợ filter qua query params).
+ * Query: ?projectId=xxx&status=TODO&type=EPIC&assigneeId=yyy
+ */
+export async function getIssues(req, res, next) {
+  try {
+    const { projectId, status, type, assigneeId } = req.query;
+    const issues = await issueService.getIssues({
+      projectId,
+      status,
+      type,
+      assigneeId,
+    });
+
+    res.json({
+      success: true,
+      data: issues,
+      total: issues.length,
+    });
+  } catch (err) {
+    next(err);
+  }
+}

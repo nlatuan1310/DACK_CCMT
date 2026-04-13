@@ -3,7 +3,10 @@ import * as issueController from "../controllers/issueController.js";
 
 const router = Router();
 
-// POST   /api/issues          → Tạo Issue mới
+// GET    /api/issues            → Lấy danh sách Issue (hỗ trợ filter)
+router.get("/", issueController.getIssues);
+
+// POST   /api/issues            → Tạo Issue mới
 router.post("/", issueController.createIssue);
 
 // PATCH  /api/issues/:id/status → Cập nhật trạng thái

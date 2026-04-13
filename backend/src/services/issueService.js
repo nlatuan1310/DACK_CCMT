@@ -150,3 +150,37 @@ export async function updateIssueStatus(issueId, newStatus, orderIndex) {
 
   return updated;
 }
+
+/**
+ * Lấy danh sách Issue, hỗ trợ lọc theo project / status / type / assignee.
+ *
+ * @param {Object} filters - Query params từ request
+ * @param {string} [filters.projectId] - Lọc theo dự án
+ * @param {string} [filters.status]    - Lọc theo trạng thái
+ * @param {string} [filters.type]      - Lọc theo loại (EPIC/STORY/TASK)
+ * @param {string} [filters.assigneeId]- Lọc theo người được giao
+ * @returns {Promise<Object[]>} Danh sách Issue kèm thông tin Assignee
+ */
+export async function getIssues(filters = {}) {
+  const where = {};
+
+  if (filters.projectId) where.projectId = filters.projectId;
+  if (filters.status) where.status = filters.status;
+  if (filters.type) where.type = filters.type;
+  if (filters.assigneeId) where.assigneeId = filters.assigneeId;
+
+  const issues = await prisma.issue.findMany({
+    where,
+    include: {
+      assignee: { select: { id: true, name: true, avatarUrl: true } },
+      reporter: { select: { id: true, name: true, avatarUrl: true } },
+      project: { select: { id: true, name: true, key: true } },
+      children: {
+        select: { id: true, title: true, status: true, type: true },
+      },
+    },
+    orderBy: [{ status: "asc" }, { orderIndex: "asc" }],
+  });
+
+  return issues;
+}
