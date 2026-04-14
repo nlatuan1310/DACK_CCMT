@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
 import Layout from './components/Layout';
 import './App.css';
 
@@ -21,6 +22,7 @@ function App() {
           <Route path="/settings" element={<h1 className="text-2xl font-semibold">Project Settings</h1>} />
         </Routes>
       </Layout>
+      <Toaster position="top-right" />
     </Router>
   );
 }

@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Search, Bell, HelpCircle, Grid, ChevronDown, Settings } from 'lucide-react';
+import CreateIssueModal from './CreateIssueModal';
 
 const Header = () => {
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
   return (
     <header className="h-16 bg-white border-b border-gray-200 fixed top-0 left-0 right-0 z-20 flex items-center justify-between px-4">
       {/* Left section: Logo & Main Nav */}
@@ -17,7 +19,10 @@ const Header = () => {
               <ChevronDown size={14} className="text-gray-500" />
             </button>
           ))}
-          <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded-md text-sm font-medium ml-2 transition-colors">
+          <button 
+            onClick={() => setIsCreateOpen(true)}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded-md text-sm font-medium ml-2 transition-colors"
+          >
             Create
           </button>
         </nav>
@@ -51,6 +56,11 @@ const Header = () => {
           </button>
         </div>
       </div>
+
+      <CreateIssueModal 
+        isOpen={isCreateOpen} 
+        onClose={() => setIsCreateOpen(false)} 
+      />
     </header>
   );
 };
