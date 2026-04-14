@@ -23,6 +23,15 @@ export const createIssue = (payload) =>
 export const getIssues = (params = {}) =>
   apiClient.get('/issues', { params }).then((res) => res.data);
 
+/**
+ * PATCH /api/issues/:id/status — Cập nhật trạng thái Issue (kéo thả).
+ * @param {string} id - ID của issue
+ * @param {string} status - Trạng thái mới ('TODO' | 'IN_PROGRESS' | 'TEST' | 'DONE')
+ * @param {number} [orderIndex] - Vị trí mới (tùy chọn)
+ */
+export const updateIssueStatus = (id, status, orderIndex) =>
+  apiClient.patch(`/issues/${id}/status`, { status, orderIndex }).then((res) => res.data);
+
 // ── Users ──────────────────────────────────────────────────────
 
 /**
