@@ -3,6 +3,7 @@ import express from "express";
 import cors from "cors";
 import issueRoutes from "./routes/issueRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
+import projectRoutes from "./routes/projectRoutes.js";
 import { errorHandler } from "./middlewares/errorHandler.js";
 
 const app = express();
@@ -31,6 +32,7 @@ app.get("/api/health", (_req, res) => {
 // ── Routes ───────────────────────────────────────────────────
 app.use("/api/issues", issueRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/projects", projectRoutes);
 
 // ── Error handler (phải đặt cuối cùng) ──────────────────────
 app.use(errorHandler);

@@ -57,9 +57,10 @@ const Header = () => {
         </div>
       </div>
 
-      <CreateIssueModal 
-        isOpen={isCreateOpen} 
-        onClose={() => setIsCreateOpen(false)} 
+      <CreateIssueModal
+        isOpen={isCreateOpen}
+        onClose={() => setIsCreateOpen(false)}
+        onCreated={() => setIsCreateOpen(false)}
       />
     </header>
   );
