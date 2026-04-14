@@ -2,6 +2,8 @@ import React from 'react';
 import BoardColumn from '../components/BoardColumn';
 import useIssues from '../hooks/useIssues';
 import { Loader2, AlertTriangle, RefreshCcw, RotateCcw } from 'lucide-react';
+import { DragDropContext } from '@hello-pangea/dnd';
+import { updateIssueStatus } from '../services/issueApi';
 
 // ── Thứ tự cột cố định theo luồng Kanban ──────────────────────
 const COLUMN_STATUSES = ['TODO', 'IN_PROGRESS', 'TEST', 'DONE'];
@@ -12,7 +14,30 @@ const COLUMN_STATUSES = ['TODO', 'IN_PROGRESS', 'TEST', 'DONE'];
  * @prop {number} refreshKey  - Tăng từ parent (App) để trigger reload sau khi tạo issue mới
  */
 const Board = ({ refreshKey = 0 }) => {
-  const { grouped, issues, loading, error, refetch } = useIssues({}, refreshKey);
+  const { grouped, issues, loading, error, refetch, updateLocalIssue } = useIssues({}, refreshKey);
+
+  // ── Drag & Drop handler ─────────────────────────────────────────
+  const handleDragEnd = async (result) => {
+    const { destination, source, draggableId } = result;
+
+    if (!destination) return;
+    if (
+      destination.droppableId === source.droppableId &&
+      destination.index === source.index
+    ) return;
+
+    // 1. Optimistic update local state (UI only)
+    updateLocalIssue(draggableId, destination.droppableId);
+
+    try {
+      // 2. Gọi API PATCH
+      await updateIssueStatus(draggableId, destination.droppableId);
+    } catch (err) {
+      console.error('Lỗi khi update status:', err);
+      // Giật lại data nếu lỗi
+      refetch();
+    }
+  };
 
   // ── Loading state ──────────────────────────────────────────────
   if (loading) {
@@ -73,15 +98,17 @@ const Board = ({ refreshKey = 0 }) => {
       <div className="border-b border-gray-200 mb-5" />
 
       {/* ── Kanban — 4 cột ──────────────────────────────────── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 flex-1 min-h-0 pb-6">
-        {COLUMN_STATUSES.map((status) => (
-          <BoardColumn
-            key={status}
-            status={status}
-            issues={grouped[status]}
-          />
-        ))}
-      </div>
+      <DragDropContext onDragEnd={handleDragEnd}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 flex-1 min-h-0 pb-6">
+          {COLUMN_STATUSES.map((status) => (
+            <BoardColumn
+              key={status}
+              status={status}
+              issues={grouped[status]}
+            />
+          ))}
+        </div>
+      </DragDropContext>
 
     </div>
   );

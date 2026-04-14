@@ -15,6 +15,7 @@ const COLUMN_STATUSES = ['TODO', 'IN_PROGRESS', 'TEST', 'DONE'];
  *   - loading  : boolean
  *   - error    : string rỗng hoặc thông báo lỗi
  *   - refetch  : hàm gọi lại API thủ công
+ *   - updateLocalIssue: cập nhật nhanh local state của 1 issue
  */
 const useIssues = (filters = {}, refreshKey = 0) => {
   const [issues,  setIssues]  = useState([]);
@@ -44,6 +45,14 @@ const useIssues = (filters = {}, refreshKey = 0) => {
     fetchIssues();
   }, [fetchIssues]);
 
+  const updateLocalIssue = useCallback((issueId, newStatus) => {
+    setIssues((prev) =>
+      prev.map((issue) =>
+        String(issue.id) === String(issueId) ? { ...issue, status: newStatus } : issue
+      )
+    );
+  }, []);
+
   // Tách mảng phẳng → { TODO: [], IN_PROGRESS: [], TEST: [], DONE: [] }
   const grouped = useMemo(() => {
     const map = Object.fromEntries(COLUMN_STATUSES.map((s) => [s, []]));
@@ -55,7 +64,7 @@ const useIssues = (filters = {}, refreshKey = 0) => {
     return map;
   }, [issues]);
 
-  return { grouped, issues, loading, error, refetch: fetchIssues };
+  return { grouped, issues, loading, error, refetch: fetchIssues, updateLocalIssue };
 };
 
 export default useIssues;
