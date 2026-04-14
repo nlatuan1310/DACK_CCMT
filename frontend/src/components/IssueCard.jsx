@@ -1,5 +1,6 @@
 import React from 'react';
 import { BookOpen, Zap, CheckSquare, Bug } from 'lucide-react';
+import { Draggable } from '@hello-pangea/dnd';
 
 // ── Type config ────────────────────────────────────────────────
 const TYPE_CONFIG = {
@@ -25,18 +26,26 @@ const pickColor = (name = '') =>
   AVATAR_COLORS[name.charCodeAt(0) % AVATAR_COLORS.length] ?? 'bg-gray-400';
 
 // ── Component ──────────────────────────────────────────────────
-const IssueCard = ({ issue }) => {
+const IssueCard = ({ issue, index }) => {
   const typeConf  = TYPE_CONFIG[issue.type] ?? TYPE_CONFIG.TASK;
   const TypeIcon  = typeConf.icon;
   const priority  = Math.min(Math.max(issue.priority ?? 0, 0), 4);
 
   return (
-    <div
-      className="
-        group bg-white rounded-lg border border-gray-200 px-3 py-3
-        shadow-sm hover:shadow-md hover:border-blue-300
-        cursor-pointer transition-all duration-150 select-none
-      "
+    <Draggable draggableId={String(issue.id)} index={index}>
+      {(provided, snapshot) => (
+        <div
+          ref={provided.innerRef}
+          {...provided.draggableProps}
+          {...provided.dragHandleProps}
+        className={`
+          group bg-white rounded-lg border px-3 py-3
+          shadow-sm transition-all duration-150 select-none
+          ${snapshot.isDragging 
+            ? 'border-blue-400 shadow-md rotate-2 z-50 ring-2 ring-blue-200' 
+            : 'border-gray-200 hover:shadow-md hover:border-blue-300'
+          }
+        `}
     >
       {/* Top row: type badge + priority */}
       <div className="flex items-center justify-between mb-2">
@@ -84,7 +93,9 @@ const IssueCard = ({ issue }) => {
           />
         )}
       </div>
-    </div>
+        </div>
+      )}
+    </Draggable>
   );
 };
 

@@ -1,5 +1,6 @@
 import React from 'react';
 import IssueCard from './IssueCard';
+import { Droppable } from '@hello-pangea/dnd';
 
 // ── Cấu hình màu sắc cho từng cột ─────────────────────────────
 const COLUMN_CONFIG = {
@@ -62,21 +63,32 @@ const BoardColumn = ({ status, issues = [] }) => {
       </div>
 
       {/* Issue list */}
-      <div className="flex-1 flex flex-col gap-2 p-3 overflow-y-auto">
-        {issues.length === 0 ? (
-          /* Empty state */
-          <div className="flex-1 flex flex-col items-center justify-center py-10 text-center">
-            <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center mb-2">
-              <span className="text-gray-400 text-lg">·</span>
-            </div>
-            <p className="text-xs text-gray-400">Không có issue nào</p>
+      <Droppable droppableId={status}>
+        {(provided, snapshot) => (
+          <div
+            ref={provided.innerRef}
+            {...provided.droppableProps}
+            className={`flex-1 flex flex-col gap-2 p-3 overflow-y-auto transition-colors ${
+              snapshot.isDraggingOver ? 'bg-gray-100' : ''
+            }`}
+          >
+            {issues.length === 0 ? (
+              /* Empty state */
+              <div className="flex-1 flex flex-col items-center justify-center py-10 text-center">
+                <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center mb-2">
+                  <span className="text-gray-400 text-lg">·</span>
+                </div>
+                <p className="text-xs text-gray-400">Không có issue nào</p>
+              </div>
+            ) : (
+              issues.map((issue, index) => (
+                <IssueCard key={issue.id} issue={issue} index={index} />
+              ))
+            )}
+            {provided.placeholder}
           </div>
-        ) : (
-          issues.map((issue) => (
-            <IssueCard key={issue.id} issue={issue} />
-          ))
         )}
-      </div>
+      </Droppable>
     </div>
   );
 };
