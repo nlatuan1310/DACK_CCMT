@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import BoardColumn from '../components/BoardColumn';
 import useIssues from '../hooks/useIssues';
 import { Loader2, AlertTriangle, RefreshCcw, RotateCcw } from 'lucide-react';
@@ -15,6 +15,34 @@ const COLUMN_STATUSES = ['TODO', 'IN_PROGRESS', 'TEST', 'DONE'];
  */
 const Board = ({ refreshKey = 0 }) => {
   const { grouped, issues, loading, error, refetch, updateLocalIssue } = useIssues({}, refreshKey);
+  const [selectedAssignee, setSelectedAssignee] = useState('ALL');
+
+  // Lấy danh sách thành viên duy nhất từ các issue hiện có
+  const assignees = useMemo(() => {
+    const map = new Map();
+    issues.forEach(i => {
+      if (i.assignee) {
+        const id = i.assignee._id || i.assignee.id;
+        if (id) map.set(id, i.assignee);
+      }
+    });
+    return Array.from(map.values());
+  }, [issues]);
+
+  // Lọc grouped data theo assignee
+  const filteredGrouped = useMemo(() => {
+    if (selectedAssignee === 'ALL') return grouped;
+
+    const newGrouped = {};
+    COLUMN_STATUSES.forEach(status => {
+      newGrouped[status] = grouped[status].filter(issue => {
+        if (selectedAssignee === 'UNASSIGNED') return !issue.assignee;
+        const assigneeId = issue.assignee?._id || issue.assignee?.id;
+        return String(assigneeId) === selectedAssignee;
+      });
+    });
+    return newGrouped;
+  }, [grouped, selectedAssignee]);
 
   // ── Drag & Drop handler ─────────────────────────────────────────
   const handleDragEnd = async (result) => {
@@ -84,14 +112,32 @@ const Board = ({ refreshKey = 0 }) => {
           </p>
         </div>
 
-        {/* Refresh button */}
-        <button
-          onClick={refetch}
-          title="Làm mới board"
-          className="p-2 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition"
-        >
-          <RotateCcw size={16} />
-        </button>
+        {/* Toolbar */}
+        <div className="flex items-center gap-3">
+          {/* Lọc Assignee */}
+          <select
+            value={selectedAssignee}
+            onChange={(e) => setSelectedAssignee(e.target.value)}
+            className="border-gray-300 rounded-md text-sm text-gray-700 py-1.5 pl-3 pr-8 focus:ring-blue-500 focus:border-blue-500"
+          >
+            <option value="ALL">Tất cả thành viên</option>
+            <option value="UNASSIGNED">Chưa giao (Unassigned)</option>
+            {assignees.map(u => (
+              <option key={u._id || u.id} value={u._id || u.id}>
+                {u.name}
+              </option>
+            ))}
+          </select>
+
+          {/* Refresh button */}
+          <button
+            onClick={refetch}
+            title="Làm mới board"
+            className="p-1.5 rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition"
+          >
+            <RotateCcw size={18} />
+          </button>
+        </div>
       </div>
 
       {/* Divider */}
@@ -104,7 +150,7 @@ const Board = ({ refreshKey = 0 }) => {
             <BoardColumn
               key={status}
               status={status}
-              issues={grouped[status]}
+              issues={filteredGrouped[status]}
             />
           ))}
         </div>
