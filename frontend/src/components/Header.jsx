@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Search, Bell, HelpCircle, Grid, ChevronDown, Settings } from 'lucide-react';
 import CreateIssueModal from './CreateIssueModal';
 
-const Header = () => {
+const Header = ({ onIssueCreated }) => {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   return (
     <header className="h-16 bg-white border-b border-gray-200 fixed top-0 left-0 right-0 z-20 flex items-center justify-between px-4">
@@ -60,7 +60,10 @@ const Header = () => {
       <CreateIssueModal
         isOpen={isCreateOpen}
         onClose={() => setIsCreateOpen(false)}
-        onCreated={() => setIsCreateOpen(false)}
+        onCreated={() => {
+          setIsCreateOpen(false);
+          if (onIssueCreated) onIssueCreated();
+        }}
       />
     </header>
   );
