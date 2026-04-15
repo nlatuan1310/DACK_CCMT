@@ -58,7 +58,12 @@ export const verifyToken = (req, res, next) => {
  *
  * ⚠️ Phải đặt SAU verifyToken trong chuỗi middleware.
  *
+ * Ví dụ sử dụng:
+ *   router.post("/", verifyToken, requireProjectRole(["ADMIN"]), controller);
+ *   router.patch("/:id/status", verifyToken, requireProjectRole(["ADMIN", "USER"]), controller);
+ *
  * @param {string[]} allowedRoles - Mảng vai trò cho phép, VD: ["ADMIN"] hoặc ["ADMIN", "USER"]
+ * @returns {Function} Express middleware
  */
 export const requireProjectRole = (allowedRoles) => {
   return async (req, res, next) => {
@@ -112,3 +117,14 @@ export const requireProjectRole = (allowedRoles) => {
     }
   };
 };
+
+// =============================================================
+// 3) requireMember — Shortcut: chỉ cần là thành viên dự án
+// =============================================================
+/**
+ * Middleware tiện ích: chỉ kiểm tra user có thuộc dự án hay không,
+ * không phân biệt role (ADMIN hay USER đều được).
+ *
+ * ⚠️ Phải đặt SAU verifyToken trong chuỗi middleware.
+ */
+export const requireMember = requireProjectRole(["ADMIN", "USER"]);
