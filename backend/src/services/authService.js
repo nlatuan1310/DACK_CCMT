@@ -58,6 +58,7 @@ export async function register({ name, email, password }) {
       name: newUser.name,
       email: newUser.email,
       avatarUrl: newUser.avatarUrl,
+      projectMembers: [],
     },
     token,
   };
@@ -74,6 +75,11 @@ export async function login({ email, password }) {
   // Tìm user theo email
   const user = await prisma.user.findUnique({
     where: { email },
+    include: {
+      projectMembers: {
+        select: { projectId: true, role: true }
+      }
+    }
   });
 
   if (!user) {
@@ -100,6 +106,7 @@ export async function login({ email, password }) {
       name: user.name,
       email: user.email,
       avatarUrl: user.avatarUrl,
+      projectMembers: user.projectMembers,
     },
     token,
   };
@@ -121,6 +128,12 @@ export async function getMe(userId) {
       email: true,
       avatarUrl: true,
       createdAt: true,
+      projectMembers: {
+        select: {
+          projectId: true,
+          role: true,
+        }
+      }
     },
   });
 

@@ -1,9 +1,14 @@
 import React, { useState } from 'react';
 import { Search, Bell, HelpCircle, Grid, ChevronDown, Settings } from 'lucide-react';
 import CreateIssueModal from './CreateIssueModal';
+import { useAuth } from '../context/AuthContext';
 
 const Header = ({ onIssueCreated }) => {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const { user } = useAuth();
+  
+  // Điều kiện để mở/hiện nút (User có ít nhất 1 project là ADMIN)
+  const isGlobalAdmin = user?.projectMembers?.some(pm => pm.role === 'ADMIN');
   return (
     <header className="h-16 bg-white border-b border-gray-200 fixed top-0 left-0 right-0 z-20 flex items-center justify-between px-4">
       {/* Left section: Logo & Main Nav */}
@@ -19,12 +24,14 @@ const Header = ({ onIssueCreated }) => {
               <ChevronDown size={14} className="text-gray-500" />
             </button>
           ))}
-          <button 
-            onClick={() => setIsCreateOpen(true)}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded-md text-sm font-medium ml-2 transition-colors"
-          >
-            Create
-          </button>
+          {isGlobalAdmin && (
+            <button 
+              onClick={() => setIsCreateOpen(true)}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded-md text-sm font-medium ml-2 transition-colors"
+            >
+              Create
+            </button>
+          )}
         </nav>
       </div>
 

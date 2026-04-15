@@ -47,13 +47,20 @@ const CreateIssueModal = ({ isOpen, onClose, onCreated }) => {
           getProjects(),
         ]);
         setUsers(usersRes.data ?? []);
-        setProjects(projectsRes.data ?? []);
+        
+        // Chỉ lấy những dự án mà user là ADMIN
+        const myProjects = projectsRes.data ?? [];
+        const adminProjects = myProjects.filter(p => 
+          p.members?.some(m => m.role === 'ADMIN')
+        );
+        
+        setProjects(adminProjects);
 
         // Tự động chọn project đầu tiên nếu chỉ có 1
-        if ((projectsRes.data ?? []).length === 1) {
+        if (adminProjects.length === 1) {
           setFormData((prev) => ({
             ...prev,
-            projectId: projectsRes.data[0].id,
+            projectId: adminProjects[0].id,
           }));
         }
       } catch {
