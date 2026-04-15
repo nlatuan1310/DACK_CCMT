@@ -6,13 +6,22 @@ import prisma from "../config/prisma.js";
  *
  * @returns {Promise<Object[]>} Danh sách Project
  */
-export async function getProjects() {
+export async function getProjects(userId) {
   const projects = await prisma.project.findMany({
+    where: {
+      members: {
+        some: { userId: userId }
+      }
+    },
     select: {
       id: true,
       name: true,
       key: true,
       description: true,
+      members: {
+        where: { userId: userId },
+        select: { role: true }
+      }
     },
     orderBy: { name: "asc" },
   });

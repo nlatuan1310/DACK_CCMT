@@ -6,7 +6,7 @@ import * as projectService from "../services/projectService.js";
  */
 export async function getProjects(req, res, next) {
   try {
-    const projects = await projectService.getProjects();
+    const projects = await projectService.getProjects(req.user.id);
 
     res.json({
       success: true,
