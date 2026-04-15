@@ -10,11 +10,11 @@ const Layout = ({ children, onIssueCreated }) => {
       <main className="ml-64 pt-16 p-8 min-h-screen bg-white">
         {/* Breadcrumbs can go here or inside pages */}
         <div className="mb-4 text-sm text-gray-500 flex items-center gap-2">
-          <span>Projects</span>
+          <span>Hệ thống</span>
           <span>/</span>
-          <span>Software Project</span>
+          <span>Workspace</span>
           <span>/</span>
-          <span className="text-gray-900 font-medium tracking-tight">Active sprints</span>
+          <span className="text-gray-900 font-medium tracking-tight">Bảng tổng hợp gốc</span>
         </div>
         {children}
       </main>

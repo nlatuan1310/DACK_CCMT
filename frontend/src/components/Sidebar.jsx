@@ -25,8 +25,8 @@ const Sidebar = () => {
           <Briefcase size={20} />
         </div>
         <div>
-          <h2 className="text-sm font-semibold text-gray-800">Software Project</h2>
-          <p className="text-xs text-gray-500">Classic Business</p>
+          <h2 className="text-sm font-semibold text-gray-800">Global Workspace</h2>
+          <p className="text-xs text-gray-500">Tất cả dự án của bạn</p>
         </div>
       </div>
       
@@ -51,7 +51,7 @@ const Sidebar = () => {
       
       <div className="p-4 border-t border-gray-200">
         <p className="text-xs text-center text-gray-500">
-          You're in a team-managed project
+          Theo dõi toàn bộ thẻ Kanban đa dự án
         </p>
       </div>
     </aside>

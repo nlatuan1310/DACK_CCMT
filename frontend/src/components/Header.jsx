@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { Search, Bell, HelpCircle, Grid, ChevronDown, Settings } from 'lucide-react';
+import { Search, Bell, HelpCircle, Grid, ChevronDown, Settings, LogOut } from 'lucide-react';
 import CreateIssueModal from './CreateIssueModal';
 import { useAuth } from '../context/AuthContext';
 
 const Header = ({ onIssueCreated }) => {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   
   // Điều kiện để mở/hiện nút (User có ít nhất 1 project là ADMIN)
   const isGlobalAdmin = user?.projectMembers?.some(pm => pm.role === 'ADMIN');
@@ -58,9 +58,19 @@ const Header = ({ onIssueCreated }) => {
           <button className="p-1.5 rounded-full hover:bg-gray-100 transition-colors">
             <Settings size={20} />
           </button>
-          <button className="ml-2 w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center text-white font-semibold text-sm">
-            US
-          </button>
+          <div className="flex items-center gap-3 border-l border-gray-200 pl-4 ml-2">
+            <div className="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center text-white font-semibold text-sm" title={user?.name}>
+              {user?.name?.charAt(0).toUpperCase() || 'US'}
+            </div>
+            <button 
+              onClick={logout}
+              className="p-1.5 text-gray-500 rounded-md hover:bg-red-50 hover:text-red-600 transition-colors flex items-center gap-1"
+              title="Đăng xuất"
+            >
+              <LogOut size={18} />
+              <span className="text-sm font-medium hidden md:inline">Đăng xuất</span>
+            </button>
+          </div>
         </div>
       </div>
 

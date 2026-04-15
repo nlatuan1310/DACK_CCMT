@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Loader2, AlertCircle } from 'lucide-react';
 import { toast } from 'react-hot-toast';
-import { createIssue, getUsers, getProjects } from '../services/issueApi';
+import { createIssue, getProjectMembers, getProjects } from '../services/issueApi';
 
 // ── Mapping UI label → Backend enum ───────────────────────────
 const STATUS_OPTIONS = [
@@ -42,11 +42,7 @@ const CreateIssueModal = ({ isOpen, onClose, onCreated }) => {
       setLoadingMeta(true);
       setFetchError('');
       try {
-        const [usersRes, projectsRes] = await Promise.all([
-          getUsers(),
-          getProjects(),
-        ]);
-        setUsers(usersRes.data ?? []);
+        const projectsRes = await getProjects();
         
         // Chỉ lấy những dự án mà user là ADMIN
         const myProjects = projectsRes.data ?? [];
@@ -72,6 +68,28 @@ const CreateIssueModal = ({ isOpen, onClose, onCreated }) => {
 
     fetchMeta();
   }, [isOpen]);
+
+  // Fetch members chỉ khi người dùng chọn dự án (hoặc đổi dự án)
+  useEffect(() => {
+    if (!formData.projectId) {
+      setUsers([]);
+      return;
+    }
+
+    const fetchMembers = async () => {
+      try {
+        const res = await getProjectMembers(formData.projectId);
+        // API chuẩn sẽ trả về object { data: [ {role, user: { id, name.. }} ] }
+        const membersList = Array.isArray(res.data) ? res.data : [];
+        setUsers(membersList.map(m => m.user));
+      } catch (err) {
+        console.error("Lỗi lấy danh sách member:", err);
+        setUsers([]);
+      }
+    };
+
+    fetchMembers();
+  }, [formData.projectId]);
 
   if (!isOpen) return null;
 
