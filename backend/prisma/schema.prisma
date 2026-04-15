@@ -25,6 +25,12 @@ enum IssueType {
   TASK
 }
 
+/// Vai trò của thành viên trong dự án (RBAC)
+enum ProjectRole {
+  ADMIN
+  USER
+}
+
 // ============================================================
 // Models
 // ============================================================
@@ -34,6 +40,7 @@ model User {
   id        String   @id @default(uuid())
   email     String   @unique
   name      String
+  password  String   /// Mật khẩu đã được băm (hashed)
   avatarUrl String?  @map("avatar_url")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -41,6 +48,7 @@ model User {
   // Relations
   assignedIssues Issue[] @relation("Assignee")
   reportedIssues Issue[] @relation("Reporter")
+  memberships    ProjectMember[]
 
   @@map("users")
 }
@@ -55,7 +63,8 @@ model Project {
   updatedAt   DateTime @updatedAt @map("updated_at")
 
   // Relations
-  issues Issue[]
+  issues  Issue[]
+  members ProjectMember[]
 
   @@map("projects")
 }
@@ -90,4 +99,19 @@ model Issue {
   @@index([assigneeId])
   @@index([status])
   @@map("issues")
+}
+
+/// Bảng trung gian quản lý quan hệ N:N giữa User và Project kèm vai trò
+model ProjectMember {
+  projectId String      @map("project_id")
+  userId    String      @map("user_id")
+  role      ProjectRole @default(USER)
+  joinedAt  DateTime    @default(now()) @map("joined_at")
+
+  // Relations
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([projectId, userId])
+  @@map("project_members")
 }
