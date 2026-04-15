@@ -57,12 +57,15 @@ export async function updateStatus(req, res, next) {
 export async function getIssues(req, res, next) {
   try {
     const { projectId, status, type, assigneeId } = req.query;
-    const issues = await issueService.getIssues({
-      projectId,
-      status,
-      type,
-      assigneeId,
-    });
+    const issues = await issueService.getIssues(
+      {
+        projectId,
+        status,
+        type,
+        assigneeId,
+      },
+      req.user.id
+    );
 
     res.json({
       success: true,

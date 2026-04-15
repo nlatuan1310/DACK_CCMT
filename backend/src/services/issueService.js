@@ -161,13 +161,24 @@ export async function updateIssueStatus(issueId, newStatus, orderIndex) {
  * @param {string} [filters.assigneeId]- Lọc theo người được giao
  * @returns {Promise<Object[]>} Danh sách Issue kèm thông tin Assignee
  */
-export async function getIssues(filters = {}) {
+export async function getIssues(filters = {}, userId) {
   const where = {};
 
   if (filters.projectId) where.projectId = filters.projectId;
   if (filters.status) where.status = filters.status;
   if (filters.type) where.type = filters.type;
   if (filters.assigneeId) where.assigneeId = filters.assigneeId;
+
+  // Ràng buộc bảo mật (RBAC): Chỉ hiển thị Issue thuộc dự án mà user tham gia
+  if (userId) {
+    where.project = {
+      members: {
+        some: {
+          userId: userId,
+        },
+      },
+    };
+  }
 
   const issues = await prisma.issue.findMany({
     where,
