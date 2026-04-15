@@ -12,6 +12,9 @@ const router = Router();
 // GET /api/projects → Lấy danh sách tất cả dự án
 router.get("/", projectController.getProjects);
 
+// POST /api/projects → Tạo dự án mới (auto-assign ADMIN cho người tạo)
+router.post("/", verifyToken, projectController.createProject);
+
 // ── Member Management ────────────────────────────────────────
 // GET    /api/projects/:projectId/members              → Xem danh sách thành viên (ADMIN + USER)
 router.get(
