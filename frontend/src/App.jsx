@@ -6,6 +6,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Board from './pages/Board';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import Settings from './pages/Settings';
 import './App.css';
 
 function App() {
@@ -35,7 +36,7 @@ function App() {
                   <Route path="/dashboard" element={<h1 className="text-2xl font-semibold">Dashboard</h1>} />
                   <Route path="/backlog"   element={<h1 className="text-2xl font-semibold">Backlog</h1>} />
                   <Route path="/issues"    element={<h1 className="text-2xl font-semibold">Issues</h1>} />
-                  <Route path="/settings"  element={<h1 className="text-2xl font-semibold">Project Settings</h1>} />
+                  <Route path="/settings"  element={<Settings />} />
                 </Routes>
               </Layout>
             </ProtectedRoute>
