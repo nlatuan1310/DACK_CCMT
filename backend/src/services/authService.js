@@ -76,7 +76,7 @@ export async function login({ email, password }) {
   const user = await prisma.user.findUnique({
     where: { email },
     include: {
-      projectMembers: {
+      memberships: {
         select: { projectId: true, role: true }
       }
     }
@@ -106,7 +106,7 @@ export async function login({ email, password }) {
       name: user.name,
       email: user.email,
       avatarUrl: user.avatarUrl,
-      projectMembers: user.projectMembers,
+      projectMembers: user.memberships,
     },
     token,
   };
@@ -128,7 +128,7 @@ export async function getMe(userId) {
       email: true,
       avatarUrl: true,
       createdAt: true,
-      projectMembers: {
+      memberships: {
         select: {
           projectId: true,
           role: true,
@@ -143,5 +143,12 @@ export async function getMe(userId) {
     throw error;
   }
 
-  return user;
+  return {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    avatarUrl: user.avatarUrl,
+    createdAt: user.createdAt,
+    projectMembers: user.memberships,
+  };
 }

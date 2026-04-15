@@ -26,7 +26,7 @@ const pickColor = (name = '') =>
   AVATAR_COLORS[name.charCodeAt(0) % AVATAR_COLORS.length] ?? 'bg-gray-400';
 
 // ── Component ──────────────────────────────────────────────────
-const IssueCard = ({ issue, index }) => {
+const IssueCard = ({ issue, index, onClick }) => {
   const typeConf  = TYPE_CONFIG[issue.type] ?? TYPE_CONFIG.TASK;
   const TypeIcon  = typeConf.icon;
   const priority  = Math.min(Math.max(issue.priority ?? 0, 0), 4);
@@ -46,6 +46,7 @@ const IssueCard = ({ issue, index }) => {
             : 'border-gray-200 hover:shadow-md hover:border-blue-300'
           }
         `}
+        onClick={onClick}
     >
       {/* Top row: type badge + priority */}
       <div className="flex items-center justify-between mb-2">

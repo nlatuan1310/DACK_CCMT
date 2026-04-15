@@ -35,7 +35,7 @@ const COLUMN_CONFIG = {
 };
 
 // ── Component ──────────────────────────────────────────────────
-const BoardColumn = ({ status, issues = [] }) => {
+const BoardColumn = ({ status, issues = [], onCardClick }) => {
   const conf = COLUMN_CONFIG[status] ?? COLUMN_CONFIG.TODO;
 
   return (
@@ -82,7 +82,7 @@ const BoardColumn = ({ status, issues = [] }) => {
               </div>
             ) : (
               issues.map((issue, index) => (
-                <IssueCard key={issue.id} issue={issue} index={index} />
+                <IssueCard key={issue.id} issue={issue} index={index} onClick={() => onCardClick(issue)} />
               ))
             )}
             {provided.placeholder}

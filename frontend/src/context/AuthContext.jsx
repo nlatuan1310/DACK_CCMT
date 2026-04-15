@@ -74,6 +74,7 @@ export function AuthProvider({ children }) {
     };
 
     verifyToken();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Chỉ chạy 1 lần khi mount
 
   // ── Context value ─────────────────────────────────────────────
@@ -102,6 +103,7 @@ export function AuthProvider({ children }) {
  *
  * ⚠️ Phải dùng bên trong <AuthProvider>.
  */
+/* eslint-disable react-refresh/only-export-components */
 export function useAuth() {
   const context = useContext(AuthContext);
 
