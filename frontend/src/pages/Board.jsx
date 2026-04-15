@@ -4,6 +4,7 @@ import useIssues from '../hooks/useIssues';
 import { Loader2, AlertTriangle, RefreshCcw, RotateCcw } from 'lucide-react';
 import { DragDropContext } from '@hello-pangea/dnd';
 import { updateIssueStatus } from '../services/issueApi';
+import IssueDetailModal from '../components/IssueDetailModal';
 
 // ── Thứ tự cột cố định theo luồng Kanban ──────────────────────
 const COLUMN_STATUSES = ['TODO', 'IN_PROGRESS', 'TEST', 'DONE'];
@@ -16,6 +17,7 @@ const COLUMN_STATUSES = ['TODO', 'IN_PROGRESS', 'TEST', 'DONE'];
 const Board = ({ refreshKey = 0 }) => {
   const { grouped, issues, loading, error, refetch, updateLocalIssue } = useIssues({}, refreshKey);
   const [selectedAssignee, setSelectedAssignee] = useState('ALL');
+  const [selectedIssue, setSelectedIssue] = useState(null);
 
   // Lấy danh sách thành viên duy nhất từ các issue hiện có
   const assignees = useMemo(() => {
@@ -151,11 +153,21 @@ const Board = ({ refreshKey = 0 }) => {
               key={status}
               status={status}
               issues={filteredGrouped[status]}
+              onCardClick={(issue) => setSelectedIssue(issue)}
             />
           ))}
         </div>
       </DragDropContext>
 
+      <IssueDetailModal
+        isOpen={!!selectedIssue}
+        issue={selectedIssue}
+        onClose={() => setSelectedIssue(null)}
+        onUpdate={() => {
+          setSelectedIssue(null);
+          refetch();
+        }}
+      />
     </div>
   );
 };

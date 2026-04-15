@@ -195,3 +195,56 @@ export async function getIssues(filters = {}, userId) {
 
   return issues;
 }
+
+/**
+ * Cập nhật chi tiết Issue (Title, Description, Assignee, Priority, Type)
+ */
+export async function updateIssue(issueId, data) {
+  const { title, description, priority, type, assigneeId } = data;
+
+  if (type && !VALID_TYPES.includes(type)) {
+    const err = new Error(`type phải là một trong: ${VALID_TYPES.join(", ")}`);
+    err.statusCode = 400;
+    throw err;
+  }
+
+  const existing = await prisma.issue.findUnique({ where: { id: issueId } });
+  if (!existing) {
+    const err = new Error(`Không tìm thấy Issue với id: ${issueId}`);
+    err.statusCode = 404;
+    throw err;
+  }
+
+  const updated = await prisma.issue.update({
+    where: { id: issueId },
+    data: {
+      ...(title && { title: title.trim() }),
+      ...(description !== undefined && { description: description?.trim() || null }),
+      ...(priority !== undefined && { priority }),
+      ...(type && { type }),
+      ...(assigneeId !== undefined && { assigneeId: assigneeId || null }),
+    },
+    include: {
+      assignee: { select: { id: true, name: true, avatarUrl: true } },
+      reporter: { select: { id: true, name: true, avatarUrl: true } },
+      project: { select: { id: true, name: true, key: true } },
+    },
+  });
+
+  return updated;
+}
+
+/**
+ * Xóa một Issue (thường dành cho ADMIN)
+ */
+export async function deleteIssue(issueId) {
+  const existing = await prisma.issue.findUnique({ where: { id: issueId } });
+  if (!existing) {
+    const err = new Error(`Không tìm thấy Issue với id: ${issueId}`);
+    err.statusCode = 404;
+    throw err;
+  }
+  
+  await prisma.issue.delete({ where: { id: issueId } });
+  return true;
+}

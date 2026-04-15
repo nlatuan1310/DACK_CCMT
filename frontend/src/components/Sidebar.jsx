@@ -1,21 +1,24 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { 
   Briefcase, 
   LayoutDashboard, 
   KanbanSquare, 
-  Settings, 
+  Settings as SettingsIcon, 
   ListTodo,
-  Bug
+  Bug,
+  Plus
 } from 'lucide-react';
+import CreateProjectModal from './CreateProjectModal';
 
 const Sidebar = () => {
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
   const navItems = [
     { name: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
     { name: 'Board', icon: KanbanSquare, path: '/board' },
     { name: 'Backlog', icon: ListTodo, path: '/backlog' },
     { name: 'Issues', icon: Bug, path: '/issues' },
-    { name: 'Project Settings', icon: Settings, path: '/settings' },
+    { name: 'Project Settings', icon: SettingsIcon, path: '/settings' },
   ];
 
   return (
@@ -50,10 +53,22 @@ const Sidebar = () => {
       </nav>
       
       <div className="p-4 border-t border-gray-200">
+        <button
+          onClick={() => setIsCreateOpen(true)}
+          className="w-full flex items-center justify-center gap-2 text-indigo-700 bg-indigo-50 hover:bg-indigo-100 font-medium py-2 px-3 rounded-md transition-colors mb-4"
+        >
+          <Plus size={18} /> Tạo Dự án
+        </button>
         <p className="text-xs text-center text-gray-500">
           Theo dõi toàn bộ thẻ Kanban đa dự án
         </p>
       </div>
+      
+      <CreateProjectModal 
+        isOpen={isCreateOpen} 
+        onClose={() => setIsCreateOpen(false)}
+        onProjectCreated={() => window.location.reload()} 
+      />
     </aside>
   );
 };

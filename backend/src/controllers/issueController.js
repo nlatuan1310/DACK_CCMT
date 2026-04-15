@@ -76,3 +76,38 @@ export async function getIssues(req, res, next) {
     next(err);
   }
 }
+
+/**
+ * PUT /api/issues/:id
+ * Cập nhật chi tiết Issue (title, type, assignee,...).
+ */
+export async function updateIssue(req, res, next) {
+  try {
+    const { id } = req.params;
+    const updated = await issueService.updateIssue(id, req.body);
+    res.json({
+      success: true,
+      message: "Cập nhật Issue thành công.",
+      data: updated,
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+/**
+ * DELETE /api/issues/:id
+ * Xóa Issue khỏi hệ thống.
+ */
+export async function deleteIssue(req, res, next) {
+  try {
+    const { id } = req.params;
+    await issueService.deleteIssue(id);
+    res.json({
+      success: true,
+      message: "Xóa Issue thành công.",
+    });
+  } catch (err) {
+    next(err);
+  }
+}

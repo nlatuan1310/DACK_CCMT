@@ -25,7 +25,7 @@ function Settings() {
         if (projList.length > 0) {
           setSelectedProjectId(projList[0].id);
         }
-      } catch (error) {
+      } catch {
         toast.error('Lỗi tải danh sách dự án');
       }
     };
@@ -41,7 +41,7 @@ function Settings() {
       try {
         const res = await apiClient.get(`/projects/${selectedProjectId}/members`);
         setMembers(res.data?.data || []);
-      } catch (error) {
+      } catch {
         toast.error('Lỗi tải danh sách thành viên');
       } finally {
         setLoadingMembers(false);

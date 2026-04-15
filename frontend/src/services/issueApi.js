@@ -32,6 +32,18 @@ export const getIssues = (params = {}) =>
 export const updateIssueStatus = (id, status, orderIndex) =>
   apiClient.patch(`/issues/${id}/status`, { status, orderIndex }).then((res) => res.data);
 
+/**
+ * PUT /api/issues/:id — Cập nhật chi tiết Issue
+ */
+export const updateIssue = (id, payload) =>
+  apiClient.put(`/issues/${id}`, payload).then((res) => res.data);
+
+/**
+ * DELETE /api/issues/:id — Xóa Issue
+ */
+export const deleteIssue = (id) =>
+  apiClient.delete(`/issues/${id}`).then((res) => res.data);
+
 // ── Project Members ────────────────────────────────────────────
 
 /**
