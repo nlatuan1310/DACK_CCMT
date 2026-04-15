@@ -13,17 +13,37 @@ const apiClient = axios.create({
 });
 
 // ── Request Interceptor ────────────────────────────────────────
-// (Mở rộng sau: thêm Authorization token tại đây)
+// Tự động gắn JWT Bearer token vào header Authorization
+// cho mọi request gửi xuống Backend.
 apiClient.interceptors.request.use(
-  (config) => config,
+  (config) => {
+    const token = localStorage.getItem('dack_auth_token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
   (error) => Promise.reject(error)
 );
 
 // ── Response Interceptor ───────────────────────────────────────
-// Trích xuất thẳng phần `data` từ response của backend  
+// Xử lý lỗi chung: trích xuất message + redirect /login khi 401
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
+    const status = error.response?.status;
+
+    // Token hết hạn hoặc không hợp lệ → xóa auth + redirect login
+    if (status === 401) {
+      localStorage.removeItem('dack_auth_token');
+      localStorage.removeItem('dack_auth_user');
+
+      // Chỉ redirect nếu chưa ở trang login (tránh vòng lặp)
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login';
+      }
+    }
+
     const message =
       error.response?.data?.message ||
       error.message ||
@@ -33,3 +53,4 @@ apiClient.interceptors.response.use(
 );
 
 export default apiClient;
+
