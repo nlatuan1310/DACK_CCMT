@@ -33,9 +33,6 @@ function App() {
                 <Routes>
                   <Route path="/" element={<Navigate to="/board" replace />} />
                   <Route path="/board" element={<Board refreshKey={boardRefreshKey} />} />
-                  <Route path="/dashboard" element={<h1 className="text-2xl font-semibold">Dashboard</h1>} />
-                  <Route path="/backlog"   element={<h1 className="text-2xl font-semibold">Backlog</h1>} />
-                  <Route path="/issues"    element={<h1 className="text-2xl font-semibold">Issues</h1>} />
                   <Route path="/settings"  element={<Settings />} />
                 </Routes>
               </Layout>

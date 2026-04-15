@@ -2,11 +2,8 @@ import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { 
   Briefcase, 
-  LayoutDashboard, 
   KanbanSquare, 
   Settings as SettingsIcon, 
-  ListTodo,
-  Bug,
   Plus
 } from 'lucide-react';
 import CreateProjectModal from './CreateProjectModal';
@@ -14,10 +11,7 @@ import CreateProjectModal from './CreateProjectModal';
 const Sidebar = () => {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const navItems = [
-    { name: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
     { name: 'Board', icon: KanbanSquare, path: '/board' },
-    { name: 'Backlog', icon: ListTodo, path: '/backlog' },
-    { name: 'Issues', icon: Bug, path: '/issues' },
     { name: 'Project Settings', icon: SettingsIcon, path: '/settings' },
   ];
 
