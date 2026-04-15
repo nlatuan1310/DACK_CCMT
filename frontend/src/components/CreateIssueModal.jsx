@@ -18,7 +18,7 @@ const TYPE_OPTIONS = [
 ];
 
 // ── Component ──────────────────────────────────────────────────
-const CreateIssueModal = ({ isOpen, onClose, onCreated }) => {
+const CreateIssueModal = ({ isOpen, onClose, onCreated, defaultProjectId }) => {
   const [formData, setFormData] = useState({
     title:       '',
     description: '',
@@ -52,8 +52,13 @@ const CreateIssueModal = ({ isOpen, onClose, onCreated }) => {
         
         setProjects(adminProjects);
 
-        // Tự động chọn project đầu tiên nếu chỉ có 1
-        if (adminProjects.length === 1) {
+        // Pre-fill projectId nếu có truyền vào context
+        if (defaultProjectId) {
+          setFormData((prev) => ({
+            ...prev,
+            projectId: defaultProjectId,
+          }));
+        } else if (adminProjects.length === 1) {
           setFormData((prev) => ({
             ...prev,
             projectId: adminProjects[0].id,
@@ -67,7 +72,7 @@ const CreateIssueModal = ({ isOpen, onClose, onCreated }) => {
     };
 
     fetchMeta();
-  }, [isOpen]);
+  }, [isOpen, defaultProjectId]);
 
   // Fetch members chỉ khi người dùng chọn dự án (hoặc đổi dự án)
   useEffect(() => {
@@ -270,7 +275,8 @@ const CreateIssueModal = ({ isOpen, onClose, onCreated }) => {
                   name="projectId"
                   value={formData.projectId}
                   onChange={handleChange}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+                  disabled={!!defaultProjectId}
+                  className={`w-full border border-gray-300 rounded-lg px-3 py-2 text-sm transition focus:outline-none focus:ring-2 focus:ring-blue-500 ${defaultProjectId ? 'bg-gray-100 cursor-not-allowed text-gray-500' : 'bg-white'}`}
                 >
                   <option value="">-- Chọn dự án --</option>
                   {projects.map((p) => (

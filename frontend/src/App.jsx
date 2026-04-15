@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { Toaster } from 'react-hot-toast';
 import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
+import ProjectsDashboard from './pages/ProjectsDashboard';
 import Board from './pages/Board';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -26,19 +27,17 @@ function App() {
 
         {/* ── Protected Routes (trong Layout có Sidebar + Header) */}
         <Route
-          path="/*"
           element={
             <ProtectedRoute>
-              <Layout onIssueCreated={handleIssueCreated}>
-                <Routes>
-                  <Route path="/" element={<Navigate to="/board" replace />} />
-                  <Route path="/board" element={<Board refreshKey={boardRefreshKey} />} />
-                  <Route path="/settings"  element={<Settings />} />
-                </Routes>
-              </Layout>
+              <Layout onIssueCreated={handleIssueCreated} />
             </ProtectedRoute>
           }
-        />
+        >
+          <Route path="/" element={<Navigate to="/projects" replace />} />
+          <Route path="/projects" element={<ProjectsDashboard />} />
+          <Route path="/projects/:projectId/board" element={<Board refreshKey={boardRefreshKey} />} />
+          <Route path="/projects/:projectId/settings" element={<Settings />} />
+        </Route>
       </Routes>
       <Toaster position="top-right" toastOptions={{ duration: 3000 }} />
     </Router>

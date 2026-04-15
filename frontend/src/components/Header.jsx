@@ -1,39 +1,25 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Grid, LogOut } from 'lucide-react';
-import CreateIssueModal from './CreateIssueModal';
 import { useAuth } from '../context/AuthContext';
 
-const Header = ({ onIssueCreated }) => {
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
+const Header = () => {
   const { user, logout } = useAuth();
   
-  // Điều kiện để mở/hiện nút (User có ít nhất 1 project là ADMIN)
-  const isGlobalAdmin = user?.projectMembers?.some(pm => pm.role === 'ADMIN');
   return (
     <header className="h-16 bg-white border-b border-gray-200 fixed top-0 left-0 right-0 z-20 flex items-center justify-between px-4">
       {/* Left section: Logo & Main Nav */}
       <div className="flex items-center gap-6">
-        <div className="flex items-center gap-2 text-blue-600 font-bold text-xl tracking-tight cursor-pointer">
+        <div className="flex items-center gap-2 text-indigo-600 font-bold text-xl tracking-tight cursor-pointer">
           <Grid size={24} />
           Jira
         </div>
-        <nav className="hidden md:flex items-center gap-1">
-          {isGlobalAdmin && (
-            <button 
-              onClick={() => setIsCreateOpen(true)}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded-md text-sm font-medium ml-2 transition-colors"
-            >
-              Create
-            </button>
-          )}
-        </nav>
       </div>
 
       {/* Right section: Profile */}
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-2 text-gray-500">
           <div className="flex items-center gap-3 border-l border-gray-200 pl-4 ml-2">
-            <div className="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center text-white font-semibold text-sm" title={user?.name}>
+            <div className="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center text-white font-semibold text-sm shadow-sm" title={user?.name}>
               {user?.name?.charAt(0).toUpperCase() || 'US'}
             </div>
             <button 
@@ -47,15 +33,6 @@ const Header = ({ onIssueCreated }) => {
           </div>
         </div>
       </div>
-
-      <CreateIssueModal
-        isOpen={isCreateOpen}
-        onClose={() => setIsCreateOpen(false)}
-        onCreated={() => {
-          setIsCreateOpen(false);
-          if (onIssueCreated) onIssueCreated();
-        }}
-      />
     </header>
   );
 };
