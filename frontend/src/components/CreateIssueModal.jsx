@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Loader2, AlertCircle } from 'lucide-react';
 import { toast } from 'react-hot-toast';
-import { createIssue, getUsers, getProjects } from '../services/issueApi';
+import { createIssue, getProjectMembers, getProjects } from '../services/issueApi';
 
 // ── Mapping UI label → Backend enum ───────────────────────────
 const STATUS_OPTIONS = [
@@ -18,7 +18,7 @@ const TYPE_OPTIONS = [
 ];
 
 // ── Component ──────────────────────────────────────────────────
-const CreateIssueModal = ({ isOpen, onClose, onCreated }) => {
+const CreateIssueModal = ({ isOpen, onClose, onCreated, defaultProjectId }) => {
   const [formData, setFormData] = useState({
     title:       '',
     description: '',
@@ -42,11 +42,7 @@ const CreateIssueModal = ({ isOpen, onClose, onCreated }) => {
       setLoadingMeta(true);
       setFetchError('');
       try {
-        const [usersRes, projectsRes] = await Promise.all([
-          getUsers(),
-          getProjects(),
-        ]);
-        setUsers(usersRes.data ?? []);
+        const projectsRes = await getProjects();
         
         // Chỉ lấy những dự án mà user là ADMIN
         const myProjects = projectsRes.data ?? [];
@@ -56,8 +52,13 @@ const CreateIssueModal = ({ isOpen, onClose, onCreated }) => {
         
         setProjects(adminProjects);
 
-        // Tự động chọn project đầu tiên nếu chỉ có 1
-        if (adminProjects.length === 1) {
+        // Pre-fill projectId nếu có truyền vào context
+        if (defaultProjectId) {
+          setFormData((prev) => ({
+            ...prev,
+            projectId: defaultProjectId,
+          }));
+        } else if (adminProjects.length === 1) {
           setFormData((prev) => ({
             ...prev,
             projectId: adminProjects[0].id,
@@ -71,7 +72,29 @@ const CreateIssueModal = ({ isOpen, onClose, onCreated }) => {
     };
 
     fetchMeta();
-  }, [isOpen]);
+  }, [isOpen, defaultProjectId]);
+
+  // Fetch members chỉ khi người dùng chọn dự án (hoặc đổi dự án)
+  useEffect(() => {
+    if (!formData.projectId) {
+      setUsers([]);
+      return;
+    }
+
+    const fetchMembers = async () => {
+      try {
+        const res = await getProjectMembers(formData.projectId);
+        // API chuẩn sẽ trả về object { data: [ {role, user: { id, name.. }} ] }
+        const membersList = Array.isArray(res.data) ? res.data : [];
+        setUsers(membersList.map(m => m.user));
+      } catch (err) {
+        console.error("Lỗi lấy danh sách member:", err);
+        setUsers([]);
+      }
+    };
+
+    fetchMembers();
+  }, [formData.projectId]);
 
   if (!isOpen) return null;
 
@@ -252,7 +275,8 @@ const CreateIssueModal = ({ isOpen, onClose, onCreated }) => {
                   name="projectId"
                   value={formData.projectId}
                   onChange={handleChange}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+                  disabled={!!defaultProjectId}
+                  className={`w-full border border-gray-300 rounded-lg px-3 py-2 text-sm transition focus:outline-none focus:ring-2 focus:ring-blue-500 ${defaultProjectId ? 'bg-gray-100 cursor-not-allowed text-gray-500' : 'bg-white'}`}
                 >
                   <option value="">-- Chọn dự án --</option>
                   {projects.map((p) => (

@@ -10,7 +10,7 @@ import {
 const router = Router();
 
 // GET /api/projects → Lấy danh sách tất cả dự án
-router.get("/", projectController.getProjects);
+router.get("/", verifyToken, projectController.getProjects);
 
 // POST /api/projects → Tạo dự án mới (auto-assign ADMIN cho người tạo)
 router.post("/", verifyToken, projectController.createProject);

@@ -59,5 +59,22 @@ router.patch(
   issueController.updateStatus
 );
 
-export default router;
+// PUT    /api/issues/:id        → Cập nhật chi tiết Issue (ADMIN + USER)
+router.put(
+  "/:id",
+  verifyToken,
+  resolveIssueProjectId,
+  requireMember,
+  issueController.updateIssue
+);
 
+// DELETE /api/issues/:id        → Xóa Issue (CHỈ ADMIN)
+router.delete(
+  "/:id",
+  verifyToken,
+  resolveIssueProjectId,
+  requireProjectRole(["ADMIN"]),
+  issueController.deleteIssue
+);
+
+export default router;

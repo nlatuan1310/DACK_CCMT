@@ -32,13 +32,25 @@ export const getIssues = (params = {}) =>
 export const updateIssueStatus = (id, status, orderIndex) =>
   apiClient.patch(`/issues/${id}/status`, { status, orderIndex }).then((res) => res.data);
 
-// ── Users ──────────────────────────────────────────────────────
+/**
+ * PUT /api/issues/:id — Cập nhật chi tiết Issue
+ */
+export const updateIssue = (id, payload) =>
+  apiClient.put(`/issues/${id}`, payload).then((res) => res.data);
 
 /**
- * GET /api/users — Lấy danh sách User dùng cho Assignee dropdown.
+ * DELETE /api/issues/:id — Xóa Issue
  */
-export const getUsers = () =>
-  apiClient.get('/users').then((res) => res.data);
+export const deleteIssue = (id) =>
+  apiClient.delete(`/issues/${id}`).then((res) => res.data);
+
+// ── Project Members ────────────────────────────────────────────
+
+/**
+ * GET /api/projects/:projectId/members — Lấy danh sách Member làm Assignee.
+ */
+export const getProjectMembers = (projectId) =>
+  apiClient.get(`/projects/${projectId}/members`).then((res) => res.data);
 
 // ── Projects ───────────────────────────────────────────────────
 

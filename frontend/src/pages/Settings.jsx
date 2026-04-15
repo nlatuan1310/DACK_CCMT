@@ -1,54 +1,53 @@
 import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import apiClient from '../services/apiClient';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'react-hot-toast';
 
 function Settings() {
   const { user } = useAuth();
+  const { projectId } = useParams();
   
-  const [projects, setProjects] = useState([]);
-  const [selectedProjectId, setSelectedProjectId] = useState('');
-  
+  const [projectInfo, setProjectInfo] = useState(null);
   const [members, setMembers] = useState([]);
   const [loadingMembers, setLoadingMembers] = useState(false);
   
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviting, setInviting] = useState(false);
 
-  // Lấy ds Project
+  // Lấy thông tin Project
   useEffect(() => {
-    const fetchProjects = async () => {
+    if (!projectId) return;
+    const fetchProjectInfo = async () => {
       try {
         const res = await apiClient.get('/projects');
         const projList = res.data?.data || [];
-        setProjects(projList);
-        if (projList.length > 0) {
-          setSelectedProjectId(projList[0].id);
-        }
-      } catch (error) {
-        toast.error('Lỗi tải danh sách dự án');
+        const currentProject = projList.find(p => p.id === projectId);
+        if (currentProject) setProjectInfo(currentProject);
+      } catch {
+        toast.error('Lỗi tải thông tin dự án');
       }
     };
-    fetchProjects();
-  }, []);
+    fetchProjectInfo();
+  }, [projectId]);
 
   // Lấy ds Member khi chọn project
   useEffect(() => {
-    if (!selectedProjectId) return;
+    if (!projectId) return;
 
     const fetchMembers = async () => {
       setLoadingMembers(true);
       try {
-        const res = await apiClient.get(`/projects/${selectedProjectId}/members`);
+        const res = await apiClient.get(`/projects/${projectId}/members`);
         setMembers(res.data?.data || []);
-      } catch (error) {
+      } catch {
         toast.error('Lỗi tải danh sách thành viên');
       } finally {
         setLoadingMembers(false);
       }
     };
     fetchMembers();
-  }, [selectedProjectId]);
+  }, [projectId]);
 
   const handleInvite = async (e) => {
     e.preventDefault();
@@ -56,7 +55,7 @@ function Settings() {
 
     setInviting(true);
     try {
-      const res = await apiClient.post(`/projects/${selectedProjectId}/members`, { email: inviteEmail });
+      const res = await apiClient.post(`/projects/${projectId}/members`, { email: inviteEmail });
       toast.success('Đã gửi lời mời thành công!');
       // Thêm member vào ds
       setMembers(prev => [...prev, res.data.data]);
@@ -70,7 +69,7 @@ function Settings() {
 
   const handleRoleChange = async (userId, newRole) => {
     try {
-      await apiClient.patch(`/projects/${selectedProjectId}/members/${userId}/role`, { role: newRole });
+      await apiClient.patch(`/projects/${projectId}/members/${userId}/role`, { role: newRole });
       toast.success('Cập nhật vai trò thành công!');
       setMembers(prev => prev.map(m => m.userId === userId ? { ...m, role: newRole } : m));
     } catch (error) {
@@ -85,32 +84,17 @@ function Settings() {
   return (
     <div className="p-6 max-w-5xl mx-auto flex flex-col gap-8 h-full overflow-y-auto w-full">
       <div>
-        <h1 className="text-2xl font-bold text-gray-800 mb-2">Project Settings</h1>
+        <h1 className="text-2xl font-bold text-gray-800 mb-2">Project Settings {projectInfo ? `- ${projectInfo.name}` : ''}</h1>
         <p className="text-gray-500">Quản lý dự án và phân quyền thành viên tham gia.</p>
       </div>
 
-      {/* Select Project */}
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-        <label className="block text-sm font-medium text-gray-700 mb-2">Chọn Dự Án làm việc</label>
-        <select
-          className="w-full sm:w-1/2 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-          value={selectedProjectId}
-          onChange={(e) => setSelectedProjectId(e.target.value)}
-        >
-          {projects.length === 0 && <option value="">Không có dự án nào</option>}
-          {projects.map(p => (
-            <option key={p.id} value={p.id}>{p.name} ({p.key})</option>
-          ))}
-        </select>
-      </div>
-
-      {selectedProjectId && (
+      {projectId && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Member List (2 cols) */}
           <div className="md:col-span-2 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden h-fit">
             <div className="px-6 py-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
               <h2 className="text-lg font-semibold text-gray-800">Danh sách thành viên</h2>
-              <span className={`px-3 py-1 rounded-full text-xs font-semibold \${isAdmin ? 'bg-indigo-100 text-indigo-800' : 'bg-green-100 text-green-800'}`}>
+              <span className={`px-3 py-1 rounded-full text-xs font-semibold ${isAdmin ? 'bg-indigo-100 text-indigo-800' : 'bg-green-100 text-green-800'}`}>
                 Vai trò của bạn: {myRole || '...'}
               </span>
             </div>
