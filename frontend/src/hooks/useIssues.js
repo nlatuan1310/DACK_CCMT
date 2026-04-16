@@ -64,7 +64,45 @@ const useIssues = (filters = {}, refreshKey = 0) => {
     return map;
   }, [issues]);
 
-  return { grouped, issues, loading, error, refetch: fetchIssues, updateLocalIssue };
+  // Nhóm issues theo Epic (swimlane style giống Jira)
+  const epicGroups = useMemo(() => {
+    const groupByStatus = (list) => {
+      const m = Object.fromEntries(COLUMN_STATUSES.map((s) => [s, []]));
+      for (const issue of list) {
+        if (m[issue.status] !== undefined) {
+          m[issue.status].push(issue);
+        }
+      }
+      return m;
+    };
+
+    // Danh sách Epic
+    const epics = issues.filter((i) => i.type === 'EPIC');
+
+    // Mỗi Epic → { epic, grouped: {TODO:[], ...}, totalChildren }
+    const groups = epics.map((epic) => {
+      const children = issues.filter((i) => i.parentId === epic.id && i.type !== 'EPIC');
+      return {
+        epic,
+        grouped: groupByStatus(children),
+        totalChildren: children.length,
+      };
+    });
+
+    // Nhóm "Không thuộc Epic nào" — issue không phải Epic và không có parentId
+    const noEpic = issues.filter((i) => i.type !== 'EPIC' && !i.parentId);
+    if (noEpic.length > 0 || groups.length === 0) {
+      groups.push({
+        epic: null,
+        grouped: groupByStatus(noEpic),
+        totalChildren: noEpic.length,
+      });
+    }
+
+    return groups;
+  }, [issues]);
+
+  return { grouped, epicGroups, issues, loading, error, refetch: fetchIssues, updateLocalIssue };
 };
 
 export default useIssues;

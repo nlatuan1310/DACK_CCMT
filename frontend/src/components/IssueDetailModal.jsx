@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { X, Trash2, Save } from 'lucide-react';
+import { X, Trash2, Save, Zap } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import apiClient from '../services/apiClient';
+import { getEpicsByProject } from '../services/issueApi';
 import { useAuth } from '../context/AuthContext';
 
 const IssueDetailModal = ({ isOpen, onClose, issue, onUpdate }) => {
   const { user } = useAuth();
-  const [formData, setFormData] = useState({ title: '', description: '', priority: 0, type: 'TASK', assigneeId: '' });
+  const [formData, setFormData] = useState({ title: '', description: '', priority: 0, type: 'TASK', assigneeId: '', parentId: '' });
   const [loading, setLoading] = useState(false);
   const [members, setMembers] = useState([]);
+  const [epics, setEpics] = useState([]);
 
   useEffect(() => {
     if (isOpen && issue) {
@@ -17,9 +19,11 @@ const IssueDetailModal = ({ isOpen, onClose, issue, onUpdate }) => {
         description: issue.description || '',
         priority: issue.priority || 0,
         type: issue.type || 'TASK',
-        assigneeId: issue.assigneeId || ''
+        assigneeId: issue.assigneeId || '',
+        parentId: issue.parentId || '',
       });
       fetchMembers();
+      fetchEpics();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, issue]);
@@ -34,12 +38,29 @@ const IssueDetailModal = ({ isOpen, onClose, issue, onUpdate }) => {
     }
   };
 
+  const fetchEpics = async () => {
+    if (!issue?.projectId) return;
+    try {
+      const res = await getEpicsByProject(issue.projectId);
+      // Loại bỏ chính issue này khỏi danh sách Epic (tránh self-reference)
+      const list = Array.isArray(res.data) ? res.data.filter(ep => ep.id !== issue.id) : [];
+      setEpics(list);
+    } catch {
+      setEpics([]);
+    }
+  };
+
   const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
 
   const handleUpdate = async () => {
     setLoading(true);
     try {
-      const res = await apiClient.put(`/issues/${issue.id}`, formData);
+      const payload = { ...formData };
+      // Epic không nên có parentId
+      if (payload.type === 'EPIC') {
+        payload.parentId = '';
+      }
+      const res = await apiClient.put(`/issues/${issue.id}`, payload);
       toast.success('Cập nhật Issue thành công');
       onUpdate(res.data.data); // pass updated issue back
       onClose();
@@ -149,6 +170,34 @@ const IssueDetailModal = ({ isOpen, onClose, issue, onUpdate }) => {
                    </div>
                 </div>
             </div>
+
+            {/* Parent Epic selector (chỉ hiện khi type !== EPIC) */}
+            {formData.type !== 'EPIC' && (
+              <div className="bg-purple-50/50 p-4 rounded-lg border border-purple-100">
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5 flex items-center gap-1.5">
+                  <Zap size={14} className="text-purple-600" />
+                  Thuộc Epic
+                </label>
+                <select
+                  name="parentId"
+                  value={formData.parentId}
+                  onChange={handleChange}
+                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 bg-white"
+                >
+                  <option value="">-- Không thuộc Epic nào --</option>
+                  {epics.map((ep) => (
+                    <option key={ep.id} value={ep.id}>
+                      ⚡ {ep.title}
+                    </option>
+                  ))}
+                </select>
+                {issue.parent && (
+                  <p className="text-xs text-purple-500 mt-1.5">
+                    Hiện tại thuộc: <strong>{issue.parent.title}</strong>
+                  </p>
+                )}
+              </div>
+            )}
         </div>
         
         <div className="px-6 py-4 border-t border-gray-200 flex justify-between items-center bg-white">

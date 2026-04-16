@@ -104,3 +104,25 @@ export async function createProject(data, creatorId) {
 
   return project;
 }
+
+/**
+ * Xóa dự án. Cascade sẽ tự động xóa tất cả Issue và ProjectMember liên quan.
+ * Chỉ ADMIN của dự án mới được phép xóa.
+ *
+ * @param {string} projectId - ID dự án cần xóa
+ * @returns {Promise<boolean>}
+ */
+export async function deleteProject(projectId) {
+  const existing = await prisma.project.findUnique({
+    where: { id: projectId },
+  });
+
+  if (!existing) {
+    const err = new Error(`Không tìm thấy dự án với id: ${projectId}`);
+    err.statusCode = 404;
+    throw err;
+  }
+
+  await prisma.project.delete({ where: { id: projectId } });
+  return true;
+}

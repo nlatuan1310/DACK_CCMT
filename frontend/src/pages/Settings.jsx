@@ -1,16 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import apiClient from '../services/apiClient';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'react-hot-toast';
+import { Trash2, AlertTriangle } from 'lucide-react';
 
 function Settings() {
   const { user } = useAuth();
   const { projectId } = useParams();
+  const navigate = useNavigate();
   
   const [projectInfo, setProjectInfo] = useState(null);
   const [members, setMembers] = useState([]);
   const [loadingMembers, setLoadingMembers] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviting, setInviting] = useState(false);
@@ -74,6 +77,22 @@ function Settings() {
       setMembers(prev => prev.map(m => m.userId === userId ? { ...m, role: newRole } : m));
     } catch (error) {
       toast.error(error.message || 'Lỗi khi cập nhật vai trò');
+    }
+  };
+
+  const handleDeleteProject = async () => {
+    const projectName = projectInfo?.name || 'dự án này';
+    if (!window.confirm(`⚠️ Bạn có chắc chắn muốn xóa dự án "${projectName}"?\n\nTất cả Issue, Epic, Story, Task trong dự án sẽ bị xóa vĩnh viễn.\n\nHành động này KHÔNG THỂ hoàn tác!`)) return;
+
+    setDeleting(true);
+    try {
+      await apiClient.delete(`/projects/${projectId}`);
+      toast.success(`Đã xóa dự án "${projectName}" thành công!`);
+      navigate('/projects', { replace: true });
+    } catch (error) {
+      toast.error(error.message || 'Lỗi khi xóa dự án');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -150,39 +169,66 @@ function Settings() {
             </div>
           </div>
 
-          {/* Invite Form (1 col) */}
-          <div className="md:col-span-1 border border-gray-200 rounded-xl bg-white shadow-sm h-fit">
-            <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
-              <h2 className="text-lg font-semibold text-gray-800">Mời thành viên</h2>
-            </div>
-            <div className="p-6">
-              {!isAdmin ? (
-                <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-md">
-                  <p className="text-yellow-700 text-sm">Bạn đang có vai trò <b>USER</b> nên không thể sử dụng tính năng mời thành viên hoặc cấu hình quyền.</p>
-                </div>
-              ) : (
-                <form onSubmit={handleInvite} className="flex flex-col gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Email người dùng</label>
-                    <input
-                      type="email"
-                      required
-                      placeholder="nhap@email.com"
-                      className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                      value={inviteEmail}
-                      onChange={(e) => setInviteEmail(e.target.value)}
-                    />
+          {/* Right sidebar: Invite + Danger Zone */}
+          <div className="md:col-span-1 flex flex-col gap-6">
+            {/* Invite Form */}
+            <div className="border border-gray-200 rounded-xl bg-white shadow-sm h-fit">
+              <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
+                <h2 className="text-lg font-semibold text-gray-800">Mời thành viên</h2>
+              </div>
+              <div className="p-6">
+                {!isAdmin ? (
+                  <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-md">
+                    <p className="text-yellow-700 text-sm">Bạn đang có vai trò <b>USER</b> nên không thể sử dụng tính năng mời thành viên hoặc cấu hình quyền.</p>
                   </div>
-                  <button
-                    type="submit"
-                    disabled={inviting || !inviteEmail}
-                    className="w-full bg-indigo-600 text-white font-medium py-2 px-4 rounded-md hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  >
-                    {inviting ? 'Đang gửi...' : 'Gửi lời mời'}
-                  </button>
-                </form>
-              )}
+                ) : (
+                  <form onSubmit={handleInvite} className="flex flex-col gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Email người dùng</label>
+                      <input
+                        type="email"
+                        required
+                        placeholder="nhap@email.com"
+                        className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        value={inviteEmail}
+                        onChange={(e) => setInviteEmail(e.target.value)}
+                      />
+                    </div>
+                    <button
+                      type="submit"
+                      disabled={inviting || !inviteEmail}
+                      className="w-full bg-indigo-600 text-white font-medium py-2 px-4 rounded-md hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      {inviting ? 'Đang gửi...' : 'Gửi lời mời'}
+                    </button>
+                  </form>
+                )}
+              </div>
             </div>
+
+            {/* Danger Zone — Xóa dự án */}
+            {isAdmin && (
+              <div className="border border-red-200 rounded-xl bg-white shadow-sm h-fit overflow-hidden">
+                <div className="px-6 py-4 border-b border-red-200 bg-red-50 flex items-center gap-2">
+                  <AlertTriangle size={18} className="text-red-500" />
+                  <h2 className="text-lg font-semibold text-red-700">Vùng nguy hiểm</h2>
+                </div>
+                <div className="p-6 space-y-3">
+                  <p className="text-sm text-gray-600">
+                    Xóa dự án sẽ xóa <strong>tất cả</strong> Epic, Story, Task và thành viên liên quan. 
+                    Hành động này <strong>không thể hoàn tác</strong>.
+                  </p>
+                  <button
+                    onClick={handleDeleteProject}
+                    disabled={deleting}
+                    className="w-full flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white font-medium py-2.5 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Trash2 size={16} />
+                    {deleting ? 'Đang xóa...' : 'Xóa dự án này'}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -191,3 +237,4 @@ function Settings() {
 }
 
 export default Settings;
+

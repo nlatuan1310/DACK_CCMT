@@ -59,3 +59,9 @@ export const getProjectMembers = (projectId) =>
  */
 export const getProjects = () =>
   apiClient.get('/projects').then((res) => res.data);
+
+/**
+ * GET /api/issues?projectId=xxx&type=EPIC — Lấy danh sách Epic của 1 project.
+ */
+export const getEpicsByProject = (projectId) =>
+  apiClient.get('/issues', { params: { projectId, type: 'EPIC' } }).then((res) => res.data);
