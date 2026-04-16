@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Loader2, AlertCircle } from 'lucide-react';
 import { toast } from 'react-hot-toast';
-import { createIssue, getProjectMembers, getProjects } from '../services/issueApi';
+import { createIssue, getProjectMembers, getProjects, getEpicsByProject } from '../services/issueApi';
 
 // ── Mapping UI label → Backend enum ───────────────────────────
 const STATUS_OPTIONS = [
@@ -26,10 +26,12 @@ const CreateIssueModal = ({ isOpen, onClose, onCreated, defaultProjectId }) => {
     status:      'TODO',
     projectId:   '',
     assigneeId:  '',
+    parentId:    '',
   });
 
   const [users,       setUsers]       = useState([]);
   const [projects,    setProjects]    = useState([]);
+  const [epics,       setEpics]       = useState([]);
   const [loadingMeta, setLoadingMeta] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [fetchError,  setFetchError]  = useState('');
@@ -74,17 +76,17 @@ const CreateIssueModal = ({ isOpen, onClose, onCreated, defaultProjectId }) => {
     fetchMeta();
   }, [isOpen, defaultProjectId]);
 
-  // Fetch members chỉ khi người dùng chọn dự án (hoặc đổi dự án)
+  // Fetch members + epics chỉ khi người dùng chọn dự án (hoặc đổi dự án)
   useEffect(() => {
     if (!formData.projectId) {
       setUsers([]);
+      setEpics([]);
       return;
     }
 
     const fetchMembers = async () => {
       try {
         const res = await getProjectMembers(formData.projectId);
-        // API chuẩn sẽ trả về object { data: [ {role, user: { id, name.. }} ] }
         const membersList = Array.isArray(res.data) ? res.data : [];
         setUsers(membersList.map(m => m.user));
       } catch (err) {
@@ -93,7 +95,18 @@ const CreateIssueModal = ({ isOpen, onClose, onCreated, defaultProjectId }) => {
       }
     };
 
+    const fetchEpics = async () => {
+      try {
+        const res = await getEpicsByProject(formData.projectId);
+        setEpics(Array.isArray(res.data) ? res.data : []);
+      } catch (err) {
+        console.error("Lỗi lấy danh sách epic:", err);
+        setEpics([]);
+      }
+    };
+
     fetchMembers();
+    fetchEpics();
   }, [formData.projectId]);
 
   if (!isOpen) return null;
@@ -123,10 +136,11 @@ const CreateIssueModal = ({ isOpen, onClose, onCreated, defaultProjectId }) => {
       const payload = {
         title:       formData.title.trim(),
         description: formData.description.trim() || undefined,
-        type:        formData.type,           // 'EPIC' | 'STORY' | 'TASK'
-        status:      formData.status,         // 'TODO' | 'IN_PROGRESS' | 'TEST' | 'DONE'
+        type:        formData.type,
+        status:      formData.status,
         projectId:   formData.projectId,
         assigneeId:  formData.assigneeId || undefined,
+        parentId:    (formData.type !== 'EPIC' && formData.parentId) ? formData.parentId : undefined,
       };
 
       const response = await createIssue(payload);
@@ -139,7 +153,7 @@ const CreateIssueModal = ({ isOpen, onClose, onCreated, defaultProjectId }) => {
       // Reset form & đóng modal
       setFormData({
         title: '', description: '', type: 'TASK',
-        status: 'TODO', projectId: '', assigneeId: '',
+        status: 'TODO', projectId: '', assigneeId: '', parentId: '',
       });
       onClose();
     } catch (error) {
@@ -314,6 +328,32 @@ const CreateIssueModal = ({ isOpen, onClose, onCreated, defaultProjectId }) => {
                 </select>
               )}
             </div>
+
+            {/* 6. Parent Epic (chỉ hiện khi type !== EPIC) */}
+            {formData.type !== 'EPIC' && formData.projectId && (
+              <div>
+                <label htmlFor="issue-parent" className="block text-sm font-medium text-gray-700 mb-1">
+                  Thuộc Epic
+                </label>
+                <select
+                  id="issue-parent"
+                  name="parentId"
+                  value={formData.parentId}
+                  onChange={handleChange}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-purple-500 transition"
+                >
+                  <option value="">-- Không thuộc Epic nào --</option>
+                  {epics.map((ep) => (
+                    <option key={ep.id} value={ep.id}>
+                      ⚡ {ep.title}
+                    </option>
+                  ))}
+                </select>
+                {epics.length === 0 && (
+                  <p className="text-xs text-gray-400 mt-1">Chưa có Epic nào trong dự án này. Hãy tạo Epic trước.</p>
+                )}
+              </div>
+            )}
 
           </form>
         </div>
