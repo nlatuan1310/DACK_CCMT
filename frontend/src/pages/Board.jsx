@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import useIssues from '../hooks/useIssues';
-import { Loader2, AlertTriangle, RefreshCcw, RotateCcw, Plus } from 'lucide-react';
+import { Loader2, AlertTriangle, RefreshCcw, RotateCcw, Plus, Search, X } from 'lucide-react';
 import { DragDropContext } from '@hello-pangea/dnd';
 import { updateIssueStatus } from '../services/issueApi';
 import IssueDetailModal from '../components/IssueDetailModal';
@@ -21,6 +21,9 @@ const Board = ({ refreshKey = 0 }) => {
   const { projectId } = useParams();
   const { epicGroups, issues, loading, error, refetch, updateLocalIssue } = useIssues({ projectId }, refreshKey);
   const [selectedAssignee, setSelectedAssignee] = useState('ALL');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedType, setSelectedType] = useState('ALL');
+  const [selectedEpic, setSelectedEpic] = useState('ALL');
   const [selectedIssue, setSelectedIssue] = useState(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
@@ -36,25 +39,67 @@ const Board = ({ refreshKey = 0 }) => {
     return Array.from(map.values());
   }, [issues]);
 
-  // Lọc epicGroups theo assignee
+  // Lọc epicGroups theo các bộ lọc
   const filteredEpicGroups = useMemo(() => {
-    if (selectedAssignee === 'ALL') return epicGroups;
+    let filteredGroups = epicGroups;
 
-    return epicGroups.map((group) => {
+    // 1. Lọc theo Epic
+    if (selectedEpic !== 'ALL') {
+      if (selectedEpic === 'UNASSIGNED') {
+        filteredGroups = filteredGroups.filter(g => g.epic === null);
+      } else {
+        filteredGroups = filteredGroups.filter(g => g.epic && String(g.epic.id) === selectedEpic);
+      }
+    }
+
+    return filteredGroups.map((group) => {
       const newGrouped = {};
       COLUMN_STATUSES.forEach((status) => {
         newGrouped[status] = (group.grouped[status] || []).filter((issue) => {
-          if (selectedAssignee === 'UNASSIGNED') return !issue.assignee;
-          const assigneeId = issue.assignee?._id || issue.assignee?.id;
-          return String(assigneeId) === selectedAssignee;
+          // Lọc assignee
+          if (selectedAssignee !== 'ALL') {
+            if (selectedAssignee === 'UNASSIGNED') {
+              if (issue.assignee) return false;
+            } else {
+              const assigneeId = issue.assignee?._id || issue.assignee?.id;
+              if (String(assigneeId) !== selectedAssignee) return false;
+            }
+          }
+
+          // Lọc search title
+          if (searchTerm.trim() !== '') {
+            const term = searchTerm.toLowerCase();
+            const titleMatch = issue.title?.toLowerCase().includes(term);
+            const keyMatch = issue.key?.toLowerCase().includes(term); // Nếu issue có mã
+            if (!titleMatch && !keyMatch) return false;
+          }
+
+          // Lọc theo Type
+          if (selectedType !== 'ALL' && issue.type !== selectedType) {
+            return false;
+          }
+
+          return true;
         });
       });
 
       const totalChildren = COLUMN_STATUSES.reduce((sum, s) => sum + newGrouped[s].length, 0);
 
-      return { ...group, grouped: newGrouped, totalChildren };
-    }).filter((group) => group.totalChildren > 0 || group.epic !== null);
-  }, [epicGroups, selectedAssignee]);
+      // Ẩn Epic nếu nó trống thẻ và người dùng ĐANG LỌC (tránh hiển thị Epic rỗng khi search/filter),
+      // Ngoại trừ trường hợp cố tình chọn cụ thể Epic đó.
+      const isFiltering = selectedAssignee !== 'ALL' || searchTerm.trim() !== '' || selectedType !== 'ALL';
+      const shouldKeepEmptyEpic = !isFiltering && group.epic !== null;
+
+      return { ...group, grouped: newGrouped, totalChildren, shouldKeepEmptyEpic };
+    }).filter((group) => group.totalChildren > 0 || group.shouldKeepEmptyEpic);
+  }, [epicGroups, selectedAssignee, searchTerm, selectedType, selectedEpic]);
+
+  const clearFilters = () => {
+    setSelectedAssignee('ALL');
+    setSearchTerm('');
+    setSelectedType('ALL');
+    setSelectedEpic('ALL');
+  };
 
   // ── Drag & Drop handler ─────────────────────────────────────────
   // droppableId format: "epicId::STATUS" hoặc "no-epic::STATUS"
@@ -131,23 +176,8 @@ const Board = ({ refreshKey = 0 }) => {
           </p>
         </div>
 
-        {/* Toolbar */}
+        {/* Global actions */}
         <div className="flex items-center gap-3">
-          {/* Lọc Assignee */}
-          <select
-            value={selectedAssignee}
-            onChange={(e) => setSelectedAssignee(e.target.value)}
-            className="border-gray-300 rounded-md text-sm text-gray-700 py-1.5 pl-3 pr-8 focus:ring-blue-500 focus:border-blue-500"
-          >
-            <option value="ALL">Tất cả thành viên</option>
-            <option value="UNASSIGNED">Chưa giao (Unassigned)</option>
-            {assignees.map(u => (
-              <option key={u._id || u.id} value={u._id || u.id}>
-                {u.name}
-              </option>
-            ))}
-          </select>
-
           {/* Refresh button */}
           <button
             onClick={refetch}
@@ -165,6 +195,67 @@ const Board = ({ refreshKey = 0 }) => {
             <Plus size={16} /> Tạo thẻ
           </button>
         </div>
+      </div>
+
+      {/* ── Filters ─────────────────────────────────────────── */}
+      <div className="flex flex-wrap items-center gap-3 mb-4 p-3 bg-gray-50 rounded-lg border border-gray-100">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+          <input
+            type="text"
+            placeholder="Tìm thẻ công việc..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-9 pr-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 w-60 outline-none"
+          />
+        </div>
+
+        <select
+          value={selectedAssignee}
+          onChange={(e) => setSelectedAssignee(e.target.value)}
+          className="border border-gray-300 rounded-md text-sm text-gray-700 py-1.5 pl-3 pr-8 focus:ring-blue-500 focus:border-blue-500 outline-none"
+        >
+          <option value="ALL">Mọi thành viên</option>
+          <option value="UNASSIGNED">Chưa phân công</option>
+          {assignees.map(u => (
+            <option key={u._id || u.id} value={u._id || u.id}>
+              {u.name}
+            </option>
+          ))}
+        </select>
+
+        <select
+          value={selectedType}
+          onChange={(e) => setSelectedType(e.target.value)}
+          className="border border-gray-300 rounded-md text-sm text-gray-700 py-1.5 pl-3 pr-8 focus:ring-blue-500 focus:border-blue-500 outline-none"
+        >
+          <option value="ALL">Mọi loại thẻ</option>
+          <option value="STORY">Story</option>
+          <option value="TASK">Task</option>
+        </select>
+
+        <select
+          value={selectedEpic}
+          onChange={(e) => setSelectedEpic(e.target.value)}
+          className="border border-gray-300 rounded-md text-sm text-gray-700 py-1.5 pl-3 pr-8 focus:ring-blue-500 focus:border-blue-500 outline-none max-w-[200px]"
+        >
+          <option value="ALL">Mọi Epic</option>
+          <option value="UNASSIGNED">Không thuộc Epic</option>
+          {epicGroups.filter(g => g.epic).map(g => (
+            <option key={g.epic.id} value={g.epic.id}>
+              {g.epic.title}
+            </option>
+          ))}
+        </select>
+
+        {(selectedAssignee !== 'ALL' || searchTerm !== '' || selectedType !== 'ALL' || selectedEpic !== 'ALL') && (
+          <button
+            onClick={clearFilters}
+            className="flex items-center gap-1 px-2 py-1.5 text-sm text-gray-500 hover:text-red-600 transition-colors ml-auto"
+          >
+            <X size={16} /> <span>Xóa lọc</span>
+          </button>
+        )}
       </div>
 
       {/* Column status legend */}
