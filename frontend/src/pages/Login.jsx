@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { login as loginApi } from '../services/authApi';
 import { LogIn, Mail, Lock, Eye, EyeOff, KanbanSquare, Loader2 } from 'lucide-react';
 
 const Login = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { login } = useAuth();
+  
+  const from = location.state?.from?.pathname || '/projects';
 
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
@@ -39,7 +42,7 @@ const Login = () => {
       login(result.data.user, result.data.token);
 
       // Điều hướng vào dashboard
-      navigate('/board', { replace: true });
+      navigate(from, { replace: true });
     } catch (err) {
       setError(err.message || 'Đăng nhập thất bại. Vui lòng thử lại.');
     } finally {
