@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { register as registerApi } from '../services/authApi';
 import { useAuth } from '../context/AuthContext';
 import { UserPlus, Mail, Lock, Eye, EyeOff, User, KanbanSquare, Loader2, CheckCircle2 } from 'lucide-react';
 
 const Register = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { login } = useAuth();
+  
+  const from = location.state?.from?.pathname || '/projects';
 
   const [formData, setFormData] = useState({
     name: '',
@@ -72,7 +75,7 @@ const Register = () => {
       // Đăng ký thành công → tự động login nếu server trả token
       if (result.data?.token) {
         login(result.data.user, result.data.token);
-        navigate('/board', { replace: true });
+        navigate(from, { replace: true });
       } else {
         // Nếu không trả token, chuyển sang trang login
         navigate('/login', { replace: true });
@@ -194,17 +197,15 @@ const Register = () => {
                     {[1, 2, 3, 4].map((i) => (
                       <div
                         key={i}
-                        className={`h-1 flex-1 rounded-full transition-all duration-300 ${
-                          i <= strength.level ? strength.color : 'bg-gray-200'
-                        }`}
+                        className={`h-1 flex-1 rounded-full transition-all duration-300 ${i <= strength.level ? strength.color : 'bg-gray-200'
+                          }`}
                       />
                     ))}
                   </div>
-                  <p className={`text-xs ${
-                    strength.level <= 1 ? 'text-red-500' :
-                    strength.level <= 2 ? 'text-yellow-600' :
-                    strength.level <= 3 ? 'text-blue-600' : 'text-green-600'
-                  }`}>
+                  <p className={`text-xs ${strength.level <= 1 ? 'text-red-500' :
+                      strength.level <= 2 ? 'text-yellow-600' :
+                        strength.level <= 3 ? 'text-blue-600' : 'text-green-600'
+                    }`}>
                     Độ mạnh: {strength.text}
                   </p>
                 </div>
