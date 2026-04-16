@@ -186,6 +186,7 @@ export async function getIssues(filters = {}, userId) {
       assignee: { select: { id: true, name: true, avatarUrl: true } },
       reporter: { select: { id: true, name: true, avatarUrl: true } },
       project: { select: { id: true, name: true, key: true } },
+      parent: { select: { id: true, title: true, type: true } },
       children: {
         select: { id: true, title: true, status: true, type: true },
       },
@@ -200,7 +201,7 @@ export async function getIssues(filters = {}, userId) {
  * Cập nhật chi tiết Issue (Title, Description, Assignee, Priority, Type)
  */
 export async function updateIssue(issueId, data) {
-  const { title, description, priority, type, assigneeId } = data;
+  const { title, description, priority, type, assigneeId, parentId } = data;
 
   if (type && !VALID_TYPES.includes(type)) {
     const err = new Error(`type phải là một trong: ${VALID_TYPES.join(", ")}`);
@@ -223,6 +224,7 @@ export async function updateIssue(issueId, data) {
       ...(priority !== undefined && { priority }),
       ...(type && { type }),
       ...(assigneeId !== undefined && { assigneeId: assigneeId || null }),
+      ...(parentId !== undefined && { parentId: parentId || null }),
     },
     include: {
       assignee: { select: { id: true, name: true, avatarUrl: true } },

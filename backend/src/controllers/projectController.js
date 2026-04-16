@@ -45,3 +45,20 @@ export async function createProject(req, res, next) {
     next(err);
   }
 }
+
+/**
+ * DELETE /api/projects/:projectId
+ * Xóa dự án (chỉ ADMIN).
+ */
+export async function deleteProject(req, res, next) {
+  try {
+    const { projectId } = req.params;
+    await projectService.deleteProject(projectId);
+    res.json({
+      success: true,
+      message: "Xóa dự án thành công.",
+    });
+  } catch (err) {
+    next(err);
+  }
+}

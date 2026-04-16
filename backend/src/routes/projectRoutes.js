@@ -40,4 +40,12 @@ router.patch(
   memberController.changeRole
 );
 
+// DELETE /api/projects/:projectId → Xóa dự án (chỉ ADMIN)
+router.delete(
+  "/:projectId",
+  verifyToken,
+  requireProjectRole(["ADMIN"]),
+  projectController.deleteProject
+);
+
 export default router;

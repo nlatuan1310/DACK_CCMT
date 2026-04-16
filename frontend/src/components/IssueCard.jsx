@@ -64,9 +64,19 @@ const IssueCard = ({ issue, index, onClick }) => {
       </div>
 
       {/* Title */}
-      <p className="text-sm font-medium text-gray-800 leading-snug mb-3 line-clamp-2 group-hover:text-blue-700 transition-colors">
+      <p className="text-sm font-medium text-gray-800 leading-snug mb-2 line-clamp-2 group-hover:text-blue-700 transition-colors">
         {issue.title}
       </p>
+
+      {/* Epic parent label */}
+      {issue.parent && issue.parent.type === 'EPIC' && (
+        <div className="mb-2">
+          <span className="inline-flex items-center gap-1 text-[10px] font-medium text-purple-600 bg-purple-50 border border-purple-100 px-1.5 py-0.5 rounded-full truncate max-w-full">
+            <Zap size={9} />
+            {issue.parent.title}
+          </span>
+        </div>
+      )}
 
       {/* Bottom row: project key + assignee */}
       <div className="flex items-center justify-between">

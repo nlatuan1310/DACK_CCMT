@@ -1,24 +1,25 @@
 import React, { useState, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
-import BoardColumn from '../components/BoardColumn';
 import useIssues from '../hooks/useIssues';
 import { Loader2, AlertTriangle, RefreshCcw, RotateCcw, Plus } from 'lucide-react';
 import { DragDropContext } from '@hello-pangea/dnd';
 import { updateIssueStatus } from '../services/issueApi';
 import IssueDetailModal from '../components/IssueDetailModal';
 import CreateIssueModal from '../components/CreateIssueModal';
+import EpicSwimlane from '../components/EpicSwimlane';
 
 // ── Thứ tự cột cố định theo luồng Kanban ──────────────────────
 const COLUMN_STATUSES = ['TODO', 'IN_PROGRESS', 'TEST', 'DONE'];
 
 /**
- * Board page — hiển thị 4 cột Kanban, fetch issue từ API.
+ * Board page — hiển thị Kanban theo Epic Swimlane (kiểu Jira).
+ * Mỗi Epic là 1 hàng ngang chứa 4 cột trạng thái bên trong.
  *
- * @prop {number} refreshKey  - Tăng từ parent (App) để trigger reload sau khi tạo issue mới
+ * @prop {number} refreshKey  - Tăng từ parent (App) để trigger reload
  */
 const Board = ({ refreshKey = 0 }) => {
   const { projectId } = useParams();
-  const { grouped, issues, loading, error, refetch, updateLocalIssue } = useIssues({ projectId }, refreshKey);
+  const { epicGroups, issues, loading, error, refetch, updateLocalIssue } = useIssues({ projectId }, refreshKey);
   const [selectedAssignee, setSelectedAssignee] = useState('ALL');
   const [selectedIssue, setSelectedIssue] = useState(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -35,22 +36,28 @@ const Board = ({ refreshKey = 0 }) => {
     return Array.from(map.values());
   }, [issues]);
 
-  // Lọc grouped data theo assignee
-  const filteredGrouped = useMemo(() => {
-    if (selectedAssignee === 'ALL') return grouped;
+  // Lọc epicGroups theo assignee
+  const filteredEpicGroups = useMemo(() => {
+    if (selectedAssignee === 'ALL') return epicGroups;
 
-    const newGrouped = {};
-    COLUMN_STATUSES.forEach(status => {
-      newGrouped[status] = grouped[status].filter(issue => {
-        if (selectedAssignee === 'UNASSIGNED') return !issue.assignee;
-        const assigneeId = issue.assignee?._id || issue.assignee?.id;
-        return String(assigneeId) === selectedAssignee;
+    return epicGroups.map((group) => {
+      const newGrouped = {};
+      COLUMN_STATUSES.forEach((status) => {
+        newGrouped[status] = (group.grouped[status] || []).filter((issue) => {
+          if (selectedAssignee === 'UNASSIGNED') return !issue.assignee;
+          const assigneeId = issue.assignee?._id || issue.assignee?.id;
+          return String(assigneeId) === selectedAssignee;
+        });
       });
-    });
-    return newGrouped;
-  }, [grouped, selectedAssignee]);
+
+      const totalChildren = COLUMN_STATUSES.reduce((sum, s) => sum + newGrouped[s].length, 0);
+
+      return { ...group, grouped: newGrouped, totalChildren };
+    }).filter((group) => group.totalChildren > 0 || group.epic !== null);
+  }, [epicGroups, selectedAssignee]);
 
   // ── Drag & Drop handler ─────────────────────────────────────────
+  // droppableId format: "epicId::STATUS" hoặc "no-epic::STATUS"
   const handleDragEnd = async (result) => {
     const { destination, source, draggableId } = result;
 
@@ -60,12 +67,16 @@ const Board = ({ refreshKey = 0 }) => {
       destination.index === source.index
     ) return;
 
+    // Tách status mới từ droppableId (format: "epicId::STATUS")
+    const newStatus = destination.droppableId.split('::')[1];
+    if (!newStatus || !COLUMN_STATUSES.includes(newStatus)) return;
+
     // 1. Optimistic update local state (UI only)
-    updateLocalIssue(draggableId, destination.droppableId);
+    updateLocalIssue(draggableId, newStatus);
 
     try {
       // 2. Gọi API PATCH
-      await updateIssueStatus(draggableId, destination.droppableId);
+      await updateIssueStatus(draggableId, newStatus);
     } catch (err) {
       console.error('Lỗi khi update status:', err);
       // Giật lại data nếu lỗi
@@ -115,6 +126,8 @@ const Board = ({ refreshKey = 0 }) => {
           <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Board</h1>
           <p className="text-sm text-gray-500 mt-0.5">
             {issues.length} issue{issues.length !== 1 ? 's' : ''} tổng cộng
+            {' · '}
+            {epicGroups.filter(g => g.epic !== null).length} epic
           </p>
         </div>
 
@@ -154,20 +167,48 @@ const Board = ({ refreshKey = 0 }) => {
         </div>
       </div>
 
-      {/* Divider */}
-      <div className="border-b border-gray-200 mb-5" />
+      {/* Column status legend */}
+      <div className="grid grid-cols-4 gap-3 mb-3 pl-2">
+        {COLUMN_STATUSES.map((status) => {
+          const labels = { TODO: 'To Do', IN_PROGRESS: 'In Progress', TEST: 'Test', DONE: 'Done' };
+          const dots   = { TODO: 'bg-gray-400', IN_PROGRESS: 'bg-blue-500', TEST: 'bg-purple-500', DONE: 'bg-green-500' };
+          return (
+            <div key={status} className="flex items-center gap-1.5 px-3 py-1.5">
+              <span className={`w-2.5 h-2.5 rounded-full ${dots[status]}`} />
+              <span className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                {labels[status]}
+              </span>
+            </div>
+          );
+        })}
+      </div>
 
-      {/* ── Kanban — 4 cột ──────────────────────────────────── */}
+      {/* Divider */}
+      <div className="border-b border-gray-200 mb-4" />
+
+      {/* ── Epic Swimlanes ───────────────────────────────────── */}
       <DragDropContext onDragEnd={handleDragEnd}>
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 flex-1 min-h-0 pb-6">
-          {COLUMN_STATUSES.map((status) => (
-            <BoardColumn
-              key={status}
-              status={status}
-              issues={filteredGrouped[status]}
-              onCardClick={(issue) => setSelectedIssue(issue)}
-            />
-          ))}
+        <div className="flex-1 min-h-0 pb-6 overflow-y-auto">
+          {filteredEpicGroups.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 text-center">
+              <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center mb-3">
+                <span className="text-2xl text-gray-300">📋</span>
+              </div>
+              <p className="text-sm text-gray-400">Chưa có issue nào trên board</p>
+            </div>
+          ) : (
+            filteredEpicGroups.map((group, idx) => (
+              <EpicSwimlane
+                key={group.epic?.id ?? 'no-epic'}
+                epic={group.epic}
+                grouped={group.grouped}
+                totalChildren={group.totalChildren}
+                epicId={group.epic?.id ?? 'no-epic'}
+                onCardClick={(issue) => setSelectedIssue(issue)}
+                onEpicClick={(epicIssue) => setSelectedIssue(epicIssue)}
+              />
+            ))
+          )}
         </div>
       </DragDropContext>
 
